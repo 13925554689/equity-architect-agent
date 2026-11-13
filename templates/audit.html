@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核架构 - 投融资架构智能体</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 10px; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 30px; }
+        .upload-area { border: 2px dashed #ddd; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { border-color: #667eea; background: #f9f9ff; }
+        .upload-area.dragover { border-color: #667eea; background: #f0f0ff; }
+        .upload-icon { font-size: 3rem; margin-bottom: 15px; }
+        .file-list { margin-top: 20px; }
+        .file-item { background: #f5f5f5; padding: 10px 15px; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 15px 40px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none; }
+        .result h2 { color: #667eea; margin-bottom: 15px; }
+        .score { font-size: 3rem; font-weight: bold; color: #667eea; text-align: center; margin: 20px 0; }
+        .risk-item { padding: 10px; margin-bottom: 10px; border-left: 4px solid; border-radius: 3px; }
+        .risk-p0 { background: #ffe6e6; border-color: #dc3545; }
+        .risk-p1 { background: #fff3cd; border-color: #ffc107; }
+        .risk-p2 { background: #e7f3ff; border-color: #17a2b8; }
+        .download-btn { display: inline-block; background: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 审核股权架构</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <p>点击或拖拽文件到这里</p>
+            <p style="color: #999; font-size: 0.9rem; margin-top: 10px;">
+                支持：股权架构图、融资协议、公司章程等（PDF/Word/Excel）
+            </p>
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx" style="display: none;">
+        </div>
+        
+        <div class="file-list" id="fileList"></div>
+        
+        <button class="btn" id="submitBtn" disabled>开始审核</button>
+        
+        <div id="result" class="result">
+            <h2>📋 审核报告</h2>
+            <div class="score" id="score"></div>
+            <div id="resultContent"></div>
+            <div id="downloads"></div>
+        </div>
+    </div>
+    
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const submitBtn = document.getElementById('submitBtn');
+        let selectedFiles = [];
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFileList();
+            submitBtn.disabled = selectedFiles.length === 0;
+        }
+        
+        function displayFileList() {
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
+                    <span>${escapeHTML(file.name)} (${(file.size / 1024).toFixed(1)} KB)</span>
+                    <button onclick="removeFile(${index})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">删除</button>
+                `;
+                fileList.appendChild(item);
+            });
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFileList();
+            submitBtn.disabled = selectedFiles.length === 0;
+        }
+        
+        submitBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+            
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+            
+            submitBtn.textContent = '审核中...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/audit', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResult(result);
+                } else {
+                    alert('审核失败: ' + result.error);
+                }
+            } catch (error) {
+                alert('请求失败: ' + error.message);
+            } finally {
+                submitBtn.textContent = '开始审核';
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function escapeHTML(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            const scoreDiv = document.getElementById('score');
+            const contentDiv = document.getElementById('resultContent');
+            const downloadsDiv = document.getElementById('downloads');
+            
+            const analysis = result.analysis || {};
+            const risks = result.risks || {};
+            const score = analysis.overall_score || 0;
+            
+            scoreDiv.textContent = `${score}/100`;
+            
+            let html = '';
+            
+            // 演示模式声明上屏（评审P1：只落在报告文件里用户看不见）
+            if (analysis.demo_mode) {
+                html += `<div class="risk-item risk-p1"><strong>⚠️ 演示模式</strong>：当前版本未解析上传文件，
+                    以下结论基于内置示例数据，仅演示分析流程，不构成对您实际架构的审核意见。</div>`;
+            }
+            
+            html += '<h3>风险扫描结果</h3>';
+            
+            if (risks.P0 && risks.P0.length > 0) {
+                html += '<h4 style="color: #dc3545; margin-top: 20px;">🔴 P0级风险（阻断性）</h4>';
+                risks.P0.forEach(risk => {
+                    html += `<div class="risk-item risk-p0">
+                        <strong>${escapeHTML(risk.category)}</strong>: ${escapeHTML(risk.issue)}<br>
+                        <small>解决方案: ${escapeHTML(risk.solution)}</small>
+                    </div>`;
+                });
+            }
+            
+            if (risks.P1 && risks.P1.length > 0) {
+                html += '<h4 style="color: #ffc107; margin-top: 20px;">⚠️ P1级风险（重大）</h4>';
+                risks.P1.forEach(risk => {
+                    html += `<div class="risk-item risk-p1">
+                        <strong>${escapeHTML(risk.category)}</strong>: ${escapeHTML(risk.issue)}<br>
+                        <small>解决方案: ${escapeHTML(risk.solution)}</small>
+                    </div>`;
+                });
+            }
+            
+            if (risks.P2 && risks.P2.length > 0) {
+                html += '<h4 style="color: #17a2b8; margin-top: 20px;">💡 P2级建议（优化）</h4>';
+                risks.P2.slice(0, 3).forEach(risk => {
+                    html += `<div class="risk-item risk-p2">
+                        <strong>${escapeHTML(risk.category)}</strong>: ${escapeHTML(risk.issue)}
+                    </div>`;
+                });
+            }
+            
+            contentDiv.innerHTML = html;
+            
+            downloadsDiv.innerHTML = `
+                <a href="${result.report_url}" class="download-btn">📄 下载完整审核报告</a>
+            `;
+            
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

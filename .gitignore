@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 运行时产物（可再生）
+data/*.db
+uploads/
+outputs/
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
