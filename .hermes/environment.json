@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "recipe": {
+    "name": "投融资股权架构智能体",
+    "kind": "flask",
+    "bootstrap": [
+      "pip install -r requirements.txt"
+    ],
+    "build": [],
+    "test": [
+      "python test_system.py"
+    ],
+    "start": "python app.py",
+    "port": 5299,
+    "readinessPath": "/health",
+    "evidence": [
+      "Flask app binds 127.0.0.1:5299",
+      "Health endpoint /health",
+      "Project venv at .venv"
+    ]
+  },
+  "updatedAt": "2026-11-13T00:00:00+00:00"
+}
