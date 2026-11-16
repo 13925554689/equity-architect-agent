@@ -225,9 +225,9 @@ class ArchitectureGenerator:
         """税务筹划建议"""
         return {
             '持股平台注册地': {
-                'recommendation': '宁波/霍尔果斯等税收洼地',
-                'benefit': '地方留存返还40%，节税显著',
-                'estimated_saving': '上市后减持1亿可节税800万'
+                'recommendation': '以业务与政策稳定性选址，不依赖核定征收型税收洼地',
+                'benefit': '权益性投资的合伙企业一律查账征收（税务总局公告2021年第41号），财政返还不可持续且有追溯风险',
+                'estimated_saving': '洼地套利不再计入筹划收益'
             },
             '递延纳税备案': {
                 'recommendation': '按财税101号文办理递延纳税备案',
@@ -235,8 +235,8 @@ class ArchitectureGenerator:
                 'tax_rate': '20%（财产转让所得）vs 45%（工资薪金所得）'
             },
             '分红路径': {
-                'recommendation': '公司→持股平台（免税）→个人（20%）',
-                'benefit': '避免双重征税'
+                'recommendation': '公司→合伙平台→自然人LP：穿透后股息红利仍按20%个税（国税函〔2001〕84号），平台不降低分红税负',
+                'benefit': '合伙层的作用是控制权集中与风险隔离，不是分红省税；激励个税递延按财税101号文办理'
             }
         }
     

@@ -42,6 +42,17 @@ def test_knowledge_base():
         results = kb.search('对赌协议')
         print(f'   ✅ 检索测试: 找到{len(results)}条结果')
         
+        # 三层架构文章融合知识：两法规+一模板必须可检索
+        hits = {r['id'] for r in kb.search('人格混同') if r['type'] == 'regulation'}
+        assert 'company_law_art23_2023' in hits, '人格混同检索未命中公司法23条'
+        hits = {r['id'] for r in kb.search('保本保收益') if r['type'] == 'regulation'}
+        assert 'fundraising_redline_2021' in hits, '保本保收益检索未命中非法集资红线'
+        hits = {r['id'] for r in kb.search('三层持股') if r['type'] == 'template'}
+        assert 'wallet_three_layer' in hits, '三层持股检索未命中钱包三层模板'
+        tpl = kb.get_template('wallet_three_layer')
+        assert tpl and '国税函〔2001〕84号' in ''.join(tpl['cons']), '模板税务修正注释缺失'
+        print(f'   ✅ 融合知识检索: 人格混同/保本保收益/三层持股 全部命中')
+        
         return True
     except Exception as e:
         print(f'   ❌ 知识库测试失败: {e}')
@@ -87,6 +98,9 @@ def test_generator():
         founders = sum(s['ratio'] for s in post if s['type'] == 'founder')
         assert founders > 0, '创始人比例=0'
         assert len(result.get('implementation_steps', [])) == 6
+        # 税务口径修正（三层架构文章融合）: 分红路径不得再宣称平台免税/避免双重征税
+        tax_path = result['architecture']['tax_optimization']['分红路径']['recommendation']
+        assert '84号' in tax_path, '分红路径应引用国税函〔2001〕84号（穿透不省税）'
         
         print(f'   ✅ 生成方案成功')
         print(f'   ✅ 架构类型: {result["architecture"]["template"].get("name", "未知")}')
