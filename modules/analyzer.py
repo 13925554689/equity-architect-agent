@@ -197,8 +197,8 @@ class ArchitectureAnalyzer:
                 'current': '北京',
                 'status': '⚠️',
                 'issue': '无税收优惠',
-                'recommendation': '建议迁址至宁波等税收洼地',
-                'estimated_saving': '上市后减持1亿可节税800万'
+                'recommendation': '建议迁址至宁波等税收洼地（已过时：权益性投资的独资合伙企业一律查账征收，财政部 税务总局公告2021年第41号）',
+                'estimated_saving': '洼地套利不再计入筹划收益，财政返还不可持续且有追溯风险'
             },
             '递延纳税备案': {
                 'status': '⚠️',

@@ -88,13 +88,13 @@ class ArchitectureOptimizer:
                 'current_status': '持股平台在北京，无税收优惠',
                 'target': '降低上市后减持税负',
                 'actions': [
-                    '持股平台迁址至宁波（地方留存40%返还）',
+                    '持股平台保持合规查账征收（权益性投资的独资合伙企业一律查账征收，财政部 税务总局公告2021年第41号）',
                     '办理101号文递延纳税备案',
-                    '优化分红路径：公司→平台（免税）→个人'
+                    '分红路径合规化：合伙平台穿透后股息红利仍按20%个税（国税函〔2001〕84号），不因平台省税'
                 ],
                 'timeline': '1个月',
-                'cost': '迁址费用1-2万',
-                'benefit': '上市后减持1亿节税800万'
+                'cost': '合规梳理费用1-2万',
+                'benefit': '消除税务筹划合规风险，规避洼地政策追溯'
             })
         
         # 方案3：融资空间拓展
@@ -118,7 +118,7 @@ class ArchitectureOptimizer:
     def _estimate_benefits(self, plans):
         """估算优化收益"""
         return {
-            'tax_saving': '800万+（上市后减持1亿）',
+            'tax_saving': '以101号文递延纳税与合规架构为主，不做洼地套利测算',
             'control_stability': '控制权风险从高降至中',
             'financing_capacity': '可额外融资5000万-1亿',
             'ipo_readiness': '整改后6个月可申报上市',

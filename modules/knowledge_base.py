@@ -223,9 +223,9 @@ class KnowledgeBase:
         cursor.execute('''
             SELECT template_id, name, architecture_type, structure
             FROM templates 
-            WHERE name LIKE ?
+            WHERE name LIKE ? OR architecture_type LIKE ?
             LIMIT ?
-        ''', (f'%{query}%', limit))
+        ''', (f'%{query}%', f'%{query}%', limit))
         
         for row in cursor.fetchall():
             results.append({

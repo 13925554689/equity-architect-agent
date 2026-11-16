@@ -2,6 +2,7 @@
 快速验证脚本 - 测试所有核心模块
 """
 import sys
+import json
 from pathlib import Path
 
 # 添加项目根目录到路径
@@ -47,11 +48,22 @@ def test_knowledge_base():
         assert 'company_law_art23_2023' in hits, '人格混同检索未命中公司法23条'
         hits = {r['id'] for r in kb.search('保本保收益') if r['type'] == 'regulation'}
         assert 'fundraising_redline_2021' in hits, '保本保收益检索未命中非法集资红线'
+        # 内容完整性：检索命中条目的 key_points 不得为空（评审P1：只验id不验内容）
+        for q, rid in [('人格混同', 'company_law_art23_2023'), ('保本保收益', 'fundraising_redline_2021')]:
+            cont = next(r['content'] for r in kb.search(q) if r.get('id') == rid)
+            assert len(cont.get('key_points', [])) >= 3, f'{rid} key_points 疑似被清空'
         hits = {r['id'] for r in kb.search('三层持股') if r['type'] == 'template'}
         assert 'wallet_three_layer' in hits, '三层持股检索未命中钱包三层模板'
+        # architecture_type 维度也可检索（评审P1：模板搜索只查name）
+        assert any(r['id'] == 'wallet_three_layer' for r in kb.search('钱包公司三层架构')), \
+            '按architecture_type检索未命中'
         tpl = kb.get_template('wallet_three_layer')
         assert tpl and '国税函〔2001〕84号' in ''.join(tpl['cons']), '模板税务修正注释缺失'
-        print(f'   ✅ 融合知识检索: 人格混同/保本保收益/三层持股 全部命中')
+        assert tpl['pros'] and tpl['compliance_checklist'], '模板pros/checklist为空'
+        # 负例：不存在的关键词与空串不抛异常（评审P1：无负例覆盖）
+        assert kb.search('不存在关键词xyzq') == [], '负例检索应返回空列表'
+        assert isinstance(kb.search(''), list), '空串检索不应抛异常'
+        print(f'   ✅ 融合知识检索: 人格混同/保本保收益/三层持股 全部命中（含负例与内容完整性）')
         
         return True
     except Exception as e:
@@ -99,8 +111,13 @@ def test_generator():
         assert founders > 0, '创始人比例=0'
         assert len(result.get('implementation_steps', [])) == 6
         # 税务口径修正（三层架构文章融合）: 分红路径不得再宣称平台免税/避免双重征税
-        tax_path = result['architecture']['tax_optimization']['分红路径']['recommendation']
+        tax_opt = result['architecture']['tax_optimization']
+        tax_path = tax_opt['分红路径']['recommendation']
         assert '84号' in tax_path, '分红路径应引用国税函〔2001〕84号（穿透不省税）'
+        assert '避免双重征税' not in tax_path, '分红路径仍残留免税旧话术'
+        assert '免税' not in tax_path, '分红路径仍宣称平台免税'
+        # 全链路口径一致（评审P1：optimizer/analyzer/risk_scanner 兄弟调用点）
+        assert '避免双重征税' not in json.dumps(tax_opt, ensure_ascii=False)
         
         print(f'   ✅ 生成方案成功')
         print(f'   ✅ 架构类型: {result["architecture"]["template"].get("name", "未知")}')
